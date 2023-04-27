@@ -266,5 +266,11 @@ while True:
                 logging.error(f"Sending embed failed\n{response}")
     if fail > 0:
         logging.error(f"{fail} invalid account detected")
-    logging.info("Sleeping for a day...")
-    time.sleep(86400)  # 1 day
+
+    cron = os.getenv("CRON_MODE", "false").lower()
+    if cron == "true":
+        print("Cron mode is set to \"true\" so I am only running once... Mate ne!")
+        break
+    else:
+        logging.info("Sleeping for a day...")
+        time.sleep(86400)  # 1 day
