@@ -72,6 +72,10 @@ while True:
             game_biz = list.get("game_biz", "")
             if game_biz not in all_game_biz:
                 all_game_biz.append(game_biz)
+
+            if ("hk4e_global" or "hkrpg_global" or "bh3_global") not in all_game_biz:
+                raise Exception("Genshin, Honkai Star Rail or Honkai Impact 3rd Account not found")
+
         for biz in all_game_biz:
             index = 0
             res = req.to_python(
@@ -167,7 +171,8 @@ while True:
                 author_url = "https://honkaiimpact3.hoyoverse.com/global/en-us"
                 author_icon = "https://img-os-static.hoyolab.com/communityWeb/upload/bbb364aaa7d51d168c96aaa6a1939cba.png"
             else:
-                raise Exception("Genshin, Honkai Star Rail or Honkai Impact 3rd Account not found")
+                print(account_list[index].get("game_biz", ""), "is currently not supported. Please open an issue on github for it to be added.")
+                continue
 
             logging.info("Checking in UID {} ...".format(uid))
 
@@ -247,14 +252,15 @@ while True:
                 )
                 embed_list.append(embed)
 
-    if webhook:
-        for e in embed_list:
-            webhook.add_embed(e)
-        response = webhook.execute()
-        if response.status_code == 200:
-            logging.info(f"Successfully sent Discord embed")
-        else:
-            logging.error(f"Sending embed failed\n{response}")
+    if embed_list:
+        if webhook:
+            for e in embed_list:
+                webhook.add_embed(e)
+            response = webhook.execute()
+            if response.status_code == 200:
+                logging.info(f"Successfully sent Discord embed")
+            else:
+                logging.error(f"Sending embed failed\n{response}")
     if fail > 0:
         logging.error(f"{fail} invalid account detected")
     logging.info("Sleeping for a day...")
