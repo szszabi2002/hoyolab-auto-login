@@ -7,13 +7,16 @@ sys.dont_write_bytecode = True
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
+from dotenv import load_dotenv
 from log import logging
 from request import req
+
+load_dotenv()
 
 if __name__ != "__main__":
     raise Exception("Run hoyolab.py as main")
 
-cookie = os.environ.get("COOKIE", None)
+cookie = os.getenv("COOKIE", None)
 if not cookie:
     raise Exception("Variable 'COOKIE' not found, please ensure that variable exists")
 
@@ -23,7 +26,7 @@ if len(cookies) > 1:
 
 while True:
 
-    webhook = os.environ.get("DISCORD_WEBHOOK", None)
+    webhook = os.getenv("DISCORD_WEBHOOK", None)
     if webhook:
         webhook = DiscordWebhook(url=webhook, rate_limit_retry=True)
     fail = 0
@@ -32,7 +35,7 @@ while True:
     for no in range(len(cookies)):
         logging.info(f"Verifiying cookies number: {no+1}")
         header = {
-            "User-Agent": os.environ.get(
+            "User-Agent": os.getenv(
                 "USER_AGENT",
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36 Edg/101.0.1210.47",
             ),
