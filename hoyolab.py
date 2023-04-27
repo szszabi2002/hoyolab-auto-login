@@ -267,8 +267,7 @@ while True:
     if fail > 0:
         logging.error(f"{fail} invalid account detected")
 
-    cron = os.getenv("CRON_MODE", "false").lower()
-    if cron == "true":
+    if os.getenv("CRON_MODE", "false").lower() == "true":
         print("Cron mode is set to \"true\" so I am only running once... Mate ne!")
         break
     else:
