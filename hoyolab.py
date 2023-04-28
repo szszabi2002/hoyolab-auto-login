@@ -6,26 +6,32 @@ import time
 sys.dont_write_bytecode = True
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
-
 from dotenv import load_dotenv
+
 from log import logging
 from request import req
 
 load_dotenv()
 
 if __name__ != "__main__":
-    raise Exception("Run hoyolab.py as main")
+    logging.error("Run hoyolab.py as main")
+    exit(0)
+
+try:
+    logging.getLogger().setLevel(os.getenv("LOG_LEVEL", logging.INFO))
+except Exception as exc:
+    logging.error(f"Failed to set logging level from .env: {exc}")
 
 cookie = os.getenv("COOKIE", None)
 if not cookie:
-    raise Exception("Variable 'COOKIE' not found, please ensure that variable exists")
+    logging.error("Variable 'COOKIE' not found, please ensure that variable exists")
+    exit(0)
 
 cookies = cookie.split("#")
 if len(cookies) > 1:
     logging.info(f"Multiple account detected, number of account {len(cookies)}")
 
 while True:
-
     webhook = os.getenv("DISCORD_WEBHOOK", None)
     if webhook:
         webhook = DiscordWebhook(url=webhook, rate_limit_retry=True)
@@ -57,11 +63,8 @@ while True:
                 "Variable 'COOKIE' not valid, please ensure that value is valid"
             )
             fail += 1
-            continue
-        else:
-            logging.info("Account cookie is valid")
 
-        logging.info("Scanning for hoyoverse game account")
+        logging.info("Scanning for hoyoverse game accounts")
         res = req.to_python(
             req.request(
                 "get",
@@ -76,24 +79,19 @@ while True:
             if game_biz not in all_game_biz:
                 all_game_biz.append(game_biz)
 
-            if ("hk4e_global" or "hkrpg_global" or "bh3_global") not in all_game_biz:
-                raise Exception("Genshin, Honkai Star Rail or Honkai Impact 3rd Account not found")
-
         for biz in all_game_biz:
             index = 0
             res = req.to_python(
                 req.request(
                     "get",
-                    "https://api-os-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz={}".format(
-                        biz
-                    ),
+                    f"https://api-os-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz={biz}",
                     headers=header,
                 ).text
             )
 
             account_list = res.get("data", {}).get("list", [])
 
-            if len(account_list) != 1:
+            if len(account_list) > 1:
                 highest_level = account_list[0].get("level", "NA")
 
             for i in range(1, len(account_list)):
@@ -108,24 +106,16 @@ while True:
             region = account_list[index].get("region", "")
 
             if account_list[index].get("game_biz", "") == "hk4e_global":
-                logging.info(
-                    "Genshin Impact Account found in server {}".format(region_name)
-                )
+                logging.info(f"Genshin Impact Account found in server {region_name}")
                 act_id = "e202102251931481"
                 info_url = (
-                    "https://hk4e-api-os.mihoyo.com/event/sol/info?act_id={}".format(
-                        act_id
-                    )
+                    f"https://hk4e-api-os.mihoyo.com/event/sol/info?act_id={act_id}"
                 )
                 reward_url = (
-                    "https://hk4e-api-os.mihoyo.com/event/sol/home?act_id={}".format(
-                        act_id
-                    )
+                    f"https://hk4e-api-os.mihoyo.com/event/sol/home?act_id={act_id}"
                 )
                 sign_url = (
-                    "https://hk4e-api-os.mihoyo.com/event/sol/sign?act_id={}".format(
-                        act_id
-                    )
+                    f"https://hk4e-api-os.mihoyo.com/event/sol/sign?act_id={act_id}"
                 )
                 suffix = "Traveller"
                 title = "Genshin Impact Daily Login"
@@ -134,38 +124,28 @@ while True:
                 author_url = "https://genshin.hoyoverse.com"
                 author_icon = "https://img-os-static.hoyolab.com/communityWeb/upload/1d7dd8f33c5ccdfdeac86e1e86ddd652.png"
             elif account_list[index].get("game_biz", "") == "hkrpg_global":
-                logging.info(
-                    "Honkai Star Rail Account found in server {}".format(region_name)
-                )
+                logging.info(f"Honkai Star Rail Account found in server {region_name}")
                 act_id = "e202303301540311"
-                info_url = "https://sg-public-api.hoyolab.com/event/luna/os/info?act_id={}".format(
-                    act_id
-                )
-                reward_url = "https://sg-public-api.hoyolab.com/event/luna/os/home?act_id={}".format(
-                    act_id
-                )
-                sign_url = "https://sg-public-api.hoyolab.com/event/luna/os/sign?act_id={}".format(
-                    act_id
-                )
+                info_url = f"https://sg-public-api.hoyolab.com/event/luna/os/info?act_id={act_id}"
+                reward_url = f"https://sg-public-api.hoyolab.com/event/luna/os/home?act_id={act_id}"
+                sign_url = f"https://sg-public-api.hoyolab.com/event/luna/os/sign?act_id={act_id}"
                 suffix = "Trailblazer"
                 title = "Honkai Star Rail Daily Login"
                 color = "E0D463"
-                author_name = "Pom-Pom"
+                author_name = "March 7th"
                 author_url = "https://hsr.hoyoverse.com/en-us/"
                 author_icon = "https://img-os-static.hoyolab.com/communityWeb/upload/473afd1250b71ba470744aa240f6d638.png"
             elif account_list[index].get("game_biz", "") == "bh3_global":
-                logging.info(
-                    "Honkai Impact 3 Account found in server {}".format(region_name)
-                )
+                logging.info(f"Honkai Impact 3 Account found in server {region_name}")
                 act_id = "e202110291205111"
-                info_url = "https://sg-public-api.hoyolab.com/event/mani/info?act_id={}".format(
-                    act_id
+                info_url = (
+                    f"https://sg-public-api.hoyolab.com/event/mani/info?act_id={act_id}"
                 )
-                reward_url = "https://sg-public-api.hoyolab.com/event/mani/home?act_id={}".format(
-                    act_id
+                reward_url = (
+                    f"https://sg-public-api.hoyolab.com/event/mani/home?act_id={act_id}"
                 )
-                sign_url = "https://sg-public-api.hoyolab.com/event/mani/sign?act_id={}".format(
-                    act_id
+                sign_url = (
+                    f"https://sg-public-api.hoyolab.com/event/mani/sign?act_id={act_id}"
                 )
                 suffix = "Captain"
                 title = "Honkai Impact 3rd Daily Login"
@@ -174,10 +154,12 @@ while True:
                 author_url = "https://honkaiimpact3.hoyoverse.com/global/en-us"
                 author_icon = "https://img-os-static.hoyolab.com/communityWeb/upload/bbb364aaa7d51d168c96aaa6a1939cba.png"
             else:
-                print(account_list[index].get("game_biz", ""), "is currently not supported. Please open an issue on github for it to be added.")
-                continue
+                logging.error(
+                    account_list[index].get("game_biz", ""),
+                    "is currently not supported. Please open an issue on github for it to be added.",
+                )
 
-            logging.info("Checking in UID {} ...".format(uid))
+            logging.info(f"Checking in UID {uid} ...")
 
             res = req.to_python(req.request("get", info_url, headers=header).text)
 
@@ -195,8 +177,8 @@ while True:
                 award_name = reward[total_sign_day - 1]["name"]
                 award_cnt = reward[total_sign_day - 1]["cnt"]
                 award_icon = reward[total_sign_day - 1]["icon"]
-                status = "{}, you've already checked in today".format(suffix)
-                logging.info("{}, you've already checked in today".format(suffix))
+                status = f"{suffix}, you've already checked in today"
+                logging.info(f"{suffix}, you've already checked in today")
             else:
                 award_name = reward[total_sign_day]["name"]
                 award_cnt = reward[total_sign_day]["cnt"]
@@ -211,19 +193,20 @@ while True:
                             data=json.dumps({"act_id": act_id}, ensure_ascii=False),
                         ).text
                     )
-                except Exception as e:
-                    raise Exception(e)
+                except Exception as exc:
+                    logging.error(f"Error trying to claim login reward: {exc}")
+                    exit(0)
                 code = res.get("retcode", 99999)
                 if code == 0:
                     status = "Sucessfully claim daily reward"
                     total_sign_day = total_sign_day + 1
                     logging.info("Sucessfully claim daily reward")
                 else:
-                    status = "Something went wrong.\n {}".format(res.get("message", ""))
-                    logging.info(status)
+                    status = f"Something went wrong claiming reward: {res.get('message', '')}"
+                    logging.error(status)
 
             if login_info.get("first_bind") is True:
-                status = f"Please check in manually once"
+                status = "Please check in manually once"
                 award_name = "-"
                 award_cnt = "-"
                 award_icon = ""
@@ -261,15 +244,15 @@ while True:
                 webhook.add_embed(e)
             response = webhook.execute()
             if response.status_code == 200:
-                logging.info(f"Successfully sent Discord embed")
+                logging.info("Successfully sent Discord embed")
             else:
-                logging.error(f"Sending embed failed\n{response}")
+                logging.error(f"Sending embed failed: {response}")
     if fail > 0:
         logging.error(f"{fail} invalid account detected")
 
-    if os.getenv("CRON_MODE", "false").lower() == "true":
-        print("Cron mode is set to \"true\" so I am only running once... Mate ne!")
-        break
-    else:
-        logging.info("Sleeping for a day...")
-        time.sleep(86400)  # 1 day
+    if os.getenv("RUN_ONCE", None):
+        logging.info("Script executed successfully.")
+        exit()
+
+    logging.info("Sleeping for a day...")
+    time.sleep(86400)  # 1 day
